@@ -1,3 +1,4 @@
+import { Readable } from "node:stream";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import SlackBolt from "@slack/bolt";
@@ -150,7 +151,46 @@ export async function monitorSlackProvider(opts: MonitorSlackOpts = {}) {
   const slackHttpHandler =
     slackMode === "http" && receiver
       ? async (req: IncomingMessage, res: ServerResponse) => {
-          await Promise.resolve(receiver.requestListener(req, res));
+          if (req.method !== "POST") {
+            await Promise.resolve(receiver.requestListener(req, res));
+            return;
+          }
+          const chunks: Buffer[] = [];
+          for await (const chunk of req) {
+            chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+          }
+          const bodyBuffer = Buffer.concat(chunks);
+          let body: { type?: string; challenge?: string } | null = null;
+          try {
+            body = JSON.parse(bodyBuffer.toString("utf8")) as {
+              type?: string;
+              challenge?: string;
+            };
+          } catch {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ ok: false, error: "Invalid JSON" }));
+            return;
+          }
+          if (
+            body &&
+            body.type === "url_verification" &&
+            body.challenge != null &&
+            body.challenge !== ""
+          ) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ challenge: body.challenge }));
+            return;
+          }
+          const bodyStream = new Readable({
+            read() {
+              this.push(bodyBuffer);
+              this.push(null);
+            },
+          }) as IncomingMessage;
+          (bodyStream as IncomingMessage).method = req.method;
+          (bodyStream as IncomingMessage).url = req.url;
+          (bodyStream as IncomingMessage).headers = req.headers;
+          await Promise.resolve(receiver.requestListener(bodyStream, res));
         }
       : null;
   let unregisterHttpHandler: (() => void) | null = null;
