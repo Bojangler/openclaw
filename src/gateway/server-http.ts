@@ -245,6 +245,45 @@ export function createGatewayHttpServer(opts: {
       if (await handleSlackHttpRequest(req, res)) {
         return;
       }
+      const reqUrl = new URL(req.url ?? "/", "http://localhost");
+      const isSlackEventsPath =
+        req.method === "POST" &&
+        (reqUrl.pathname === "/slack/events" || reqUrl.pathname === "/webhook/slack");
+      if (isSlackEventsPath) {
+        const chunks: Buffer[] = [];
+        for await (const chunk of req) {
+          chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+        }
+        const bodyBuffer = Buffer.concat(chunks);
+        let body: { type?: string; challenge?: string } | null = null;
+        try {
+          body = JSON.parse(bodyBuffer.toString("utf8")) as {
+            type?: string;
+            challenge?: string;
+          };
+        } catch {
+          body = null;
+        }
+        if (
+          body &&
+          body.type === "url_verification" &&
+          body.challenge != null &&
+          body.challenge !== ""
+        ) {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ challenge: body.challenge }));
+          return;
+        }
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            ok: false,
+            error:
+              'Slack HTTP handler not configured. Set channels.slack.mode to "http" and provide signingSecret and botToken (or SLACK_SIGNING_SECRET and SLACK_BOT_TOKEN).',
+          }),
+        );
+        return;
+      }
       if (await handleHooksRequest(req, res)) {
         return;
       }
