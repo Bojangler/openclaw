@@ -169,10 +169,13 @@ describe("Nix integration (U3, U5, U9)", () => {
 
   describe("U6: gateway port resolution", () => {
     it("uses default when env and config are unset", async () => {
-      await withEnvOverride({ OPENCLAW_GATEWAY_PORT: undefined }, async () => {
-        const { DEFAULT_GATEWAY_PORT, resolveGatewayPort } = await import("./config.js");
-        expect(resolveGatewayPort({})).toBe(DEFAULT_GATEWAY_PORT);
-      });
+      await withEnvOverride(
+        { OPENCLAW_GATEWAY_PORT: undefined, PORT: undefined },
+        async () => {
+          const { DEFAULT_GATEWAY_PORT, resolveGatewayPort } = await import("./config.js");
+          expect(resolveGatewayPort({})).toBe(DEFAULT_GATEWAY_PORT);
+        },
+      );
     });
 
     it("prefers OPENCLAW_GATEWAY_PORT over config", async () => {
@@ -187,6 +190,16 @@ describe("Nix integration (U3, U5, U9)", () => {
         const { resolveGatewayPort } = await import("./config.js");
         expect(resolveGatewayPort({ gateway: { port: 19003 } })).toBe(19003);
       });
+    });
+
+    it("falls back to PORT when OPENCLAW_GATEWAY_PORT and config are unset (e.g. Render)", async () => {
+      await withEnvOverride(
+        { OPENCLAW_GATEWAY_PORT: undefined, PORT: "8080" },
+        async () => {
+          const { resolveGatewayPort } = await import("./config.js");
+          expect(resolveGatewayPort({})).toBe(8080);
+        },
+      );
     });
   });
 

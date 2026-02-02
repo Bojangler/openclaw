@@ -250,5 +250,13 @@ export function resolveGatewayPort(
       return configPort;
     }
   }
+  // Cloud platforms (Render, Heroku, etc.) set PORT; use it so the gateway binds where the proxy expects.
+  const platformPort = env.PORT?.trim();
+  if (platformPort) {
+    const parsed = Number.parseInt(platformPort, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
   return DEFAULT_GATEWAY_PORT;
 }
