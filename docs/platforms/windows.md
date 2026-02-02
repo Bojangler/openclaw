@@ -25,6 +25,21 @@ Native Windows companion apps are planned.
 - [Gateway runbook](/gateway)
 - [Configuration](/gateway/configuration)
 
+## Local models (Ollama)
+
+If you want local LLMs on Windows, you can either run Ollama inside WSL2 or use
+the native Ollama Windows build.
+
+Example (PowerShell):
+
+```powershell
+ollama run kimi-k2.5
+```
+
+When OpenClaw runs in WSL2 and Ollama runs on Windows, use explicit provider
+config with the Windows host IP (auto-discovery only probes `127.0.0.1` inside
+WSL). See [Ollama](/providers/ollama) for the provider configuration details.
+
 ## Gateway service install (CLI)
 
 Inside WSL2:
