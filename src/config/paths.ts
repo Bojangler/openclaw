@@ -258,5 +258,9 @@ export function resolveGatewayPort(
       return parsed;
     }
   }
+  // In production (e.g. Docker/Render), default to 8080 so the proxy can reach the gateway without extra env.
+  if (env.NODE_ENV === "production") {
+    return 8080;
+  }
   return DEFAULT_GATEWAY_PORT;
 }

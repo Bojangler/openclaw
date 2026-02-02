@@ -30,10 +30,13 @@ ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
 
 ENV NODE_ENV=production
+# Default port for cloud (Render, Heroku); override via env at runtime.
+ENV PORT=8080
+ENV OPENCLAW_GATEWAY_PORT=8080
 
 # Security hardening: Run as non-root user
 # The node:22-bookworm image includes a 'node' user (uid 1000)
 # This reduces the attack surface by preventing container escape via root privileges
 USER node
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/index.js", "gateway"]
