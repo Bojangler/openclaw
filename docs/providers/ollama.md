@@ -13,10 +13,12 @@ Ollama is a local LLM runtime that makes it easy to run open-source models on yo
 
 1. Install Ollama: https://ollama.ai
 
-2. Pull a model:
+2. Pull (or run) a model:
 
 ```bash
 ollama pull llama3.3
+# or
+ollama run kimi-k2.5
 # or
 ollama pull qwen2.5-coder:32b
 # or
@@ -84,6 +86,24 @@ The simplest way to enable Ollama is via environment variable:
 ```bash
 export OLLAMA_API_KEY="ollama-local"
 ```
+
+### Windows (WSL2 + Ollama for Windows)
+
+OpenClaw is recommended via WSL2. If OpenClaw runs in WSL2 but you use the native
+Ollama Windows build, auto-discovery will not see it because it only probes
+`http://127.0.0.1:11434` inside WSL. Use explicit provider config with the
+Windows host IP and define models manually.
+
+Start a model in PowerShell:
+
+```powershell
+ollama run kimi-k2.5
+```
+
+Then set `models.providers.ollama.baseUrl` to your Windows host IP and add
+`kimi-k2.5` to `models.providers.ollama.models` (see the explicit setup example
+below). Use `ipconfig` in PowerShell to find the host IP and ensure port `11434`
+is reachable from WSL.
 
 ### Explicit setup (manual models)
 
